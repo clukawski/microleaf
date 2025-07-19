@@ -1,6 +1,6 @@
 # Microleaf
 
-microleaf is a small CLI tool for controlling Nanoleaf. Based off of [`picoleaf`](https://github.com/tessro/picoleaf), but with multi-panel support added (and some os-specific things removed).
+`microleaf` is a small CLI tool for controlling Nanoleaf. Based off of [`picoleaf`](https://github.com/tessro/picoleaf), but with multi-panel support added (and some os-specific things removed).
 
 ## Installation
 
