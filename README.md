@@ -1,6 +1,6 @@
 # Microleaf
 
-microleaf is a tiny CLI tool for controlling Nanoleaf. Based off of [`picoleaf`](https://github.com/tessro/picoleaf), but with multi-panel support added (and some os-specific things removed).
+microleaf is a small CLI tool for controlling Nanoleaf. Based off of [`picoleaf`](https://github.com/tessro/picoleaf), but with multi-panel support added (and some os-specific things removed).
 
 ## Installation
 
@@ -14,9 +14,7 @@ go install github.com/clukawski/microleaf
 
 # Getting Started
 
-Picoleaf expects a `.microleafrc` file (`toml` formatted) in your home directory,
-with the following settings (including a [[host_configs]] section for each panel 
-you panel you wish to manage), for example:
+Picoleaf expects a `.microleafrc` file (`toml` formatted) in your home directory, with the following settings (including a [[host_configs]] section for each panel you panel you wish to manage), for example:
 
 ```toml
 [[host_configs]]
@@ -30,8 +28,7 @@ host="192.168.1.69:16021"
 access_token="ZsYxWvUtrqPnMmLkJiHhGgFfEeDdCcBb"
 ```
 
-You can find your Nanoleaf's IP address via your router console. [The Nanoleaf
-rest API's port is `16021`](https://www.postman.com/postman/postman-team-collections/documentation/5xpm63x/nanoleaf?entity=request-95e89b6d-7272-49cf-907c-bbbebe2c136a).
+You can find your Nanoleaf's IP address via your router console. [The Nanoleaf rest API's port is `16021`](https://www.postman.com/postman/postman-team-collections/documentation/5xpm63x/nanoleaf?entity=request-95e89b6d-7272-49cf-907c-bbbebe2c136a).
 
 To create an access token, you'll need to do the following:
 
