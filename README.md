@@ -14,14 +14,20 @@ go install github.com/clukawski/microleaf
 
 # Getting Started
 
-Picoleaf expects a `.microleafrc` file in your home directory, with the
-following settings (with a config per each panel you panel you wish to manage):
+Picoleaf expects a `.microleafrc` file (`toml` formatted) in your home directory,
+with the following settings (including a [[host_configs]] section for each panel 
+you panel you wish to manage), for example:
 
-```ini
+```toml
 [[host_configs]]
-panel_name=<name to identify panel>
-host=<hostname or ip address>:<port>
-access_token=<token>
+panel_name="outhouse"
+host="192.168.1.69:16021"
+access_token="8fJ2qP0xL7mN4rT1cV6bH9aG3dQwE5uI"
+
+[[host_configs]]
+panel_name="dungeon"
+host="192.168.1.69:16021"
+access_token="ZsYxWvUtrqPnMmLkJiHhGgFfEeDdCcBb"
 ```
 
 You can find your Nanoleaf's IP address via your router console. [The Nanoleaf
