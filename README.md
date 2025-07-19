@@ -1,53 +1,31 @@
-# Picoleaf
+# Microleaf
 
-Picoleaf is a tiny CLI tool for controlling Nanoleaf.
+microleaf is a tiny CLI tool for controlling Nanoleaf. Based off of [`picoleaf`](https://github.com/tessro/picoleaf), but with multi-panel support added (and some os-specific things removed).
 
 ## Installation
-
-### macOS
-
-`picoleaf` is available via a Homebrew Tap:
-
-```bash
-brew install paulrosania/command-home/picoleaf
-```
-
-You can also download a precompiled binary from the
-[releases](https://github.com/paulrosania/picoleaf/releases) page.
 
 ### Source
 
 Make sure Go is installed, and that `$GOPATH/bin` is on your `$PATH`. Then run:
 
 ```bash
-go install github.com/paulrosania/picoleaf
+go install github.com/clukawski/microleaf
 ```
 
 # Getting Started
 
-Picoleaf expects a `.picoleafrc` file in your home directory, with the
-following settings:
+Picoleaf expects a `.microleafrc` file in your home directory, with the
+following settings (with a config per each panel you panel you wish to manage):
 
 ```ini
+[[host_configs]]
+panel_name=<name to identify panel>
 host=<hostname or ip address>:<port>
 access_token=<token>
 ```
 
-You can find your Nanoleaf's IP address via your router console. Your Nanoleaf's
-port is probably `16021`.
-
-Alternatively, you may be able to use mDNS service discovery. For example, on
-macOS you can do the following:
-
-```bash
-$ dns-sd -Z _nanoleafapi | grep -o '\w*\-.*\.local'
-
-# => 16021 Nanoleaf-Light-Panels-xx-xx-xx.local
-#
-# Use this as your `host` setting. Don't forget to append the port number.
-#
-# (You'll need to Ctrl-C to wrap up, since `dns-sd` listens indefinitely.)
-```
+You can find your Nanoleaf's IP address via your router console. [The Nanoleaf
+rest API's port is `16021`](https://www.postman.com/postman/postman-team-collections/documentation/5xpm63x/nanoleaf?entity=request-95e89b6d-7272-49cf-907c-bbbebe2c136a).
 
 To create an access token, you'll need to do the following:
 
@@ -57,35 +35,27 @@ To create an access token, you'll need to do the following:
 
 This should print a token to your console.
 
-## [macOS only] `.picoleafrc` creation helper script
-
-If you are using macOS, you can use a helper script to run these commands:
-
-1. On your Nanoleaf controller, hold the on-off button for 5-7 seconds until the
-   LED starts flashing in a pattern.
-2. Within 30 seconds, run: `./contrib/macos/create_picoleafrc > ~/.picoleafrc`
-
 ## Usage
 
 ```bash
 # Power
-picoleaf on   # Turn Nanoleaf on
-picoleaf off  # Turn Nanoleaf off
+microleaf -n <panel_name> on   # Turn Nanoleaf on
+microleaf -n <panel_name> off  # Turn Nanoleaf off
 
 # Colors
-picoleaf hsl <hue> <saturation> <lightness>  # Set Nanoleaf to the provided HSL
-picoleaf rgb <red> <green> <blue>            # Set Nanoleaf to the provided RGB
-picoleaf temp <temperature>                  # Set Nanoleaf to the provided color temperature
-picoleaf brightness <temperature>            # Set Nanoleaf to the provided brightness
+microleaf -n <panel_name> hsl <hue> <saturation> <lightness>  # Set Nanoleaf to the provided HSL
+microleaf -n <panel_name> rgb <red> <green> <blue>            # Set Nanoleaf to the provided RGB
+microleaf -n <panel_name> temp <temperature>                  # Set Nanoleaf to the provided color temperature
+microleaf -n <panel_name> brightness <temperature>            # Set Nanoleaf to the provided brightness
 
 # Effects
-picoleaf effect list           # List installed effects
-picoleaf effect select <name>  # Activate the named effect
-picoleaf effect custom [<panel> <red> <green> <blue> <transition time>] ...
+microleaf -n <panel_name> effect list           # List installed effects
+microleaf -n <panel_name> effect select <name>  # Activate the named effect
+microleaf -n <panel_name> effect custom [<panel> <red> <green> <blue> <transition time>] ...
 
 # Panel properties
-picoleaf panel info     # Print all panel information
-picoleaf panel model    # Print Nanoleaf model
-picoleaf panel name     # Print Nanoleaf name
-picoleaf panel version  # Print Nanoleaf and rhythm module versions
+microleaf -n <panel_name> panel info     # Print all panel information
+microleaf -n <panel_name> panel model    # Print Nanoleaf model
+microleaf -n <panel_name> panel name     # Print Nanoleaf name
+microleaf -n <panel_name> panel version  # Print Nanoleaf and rhythm module versions
 ```

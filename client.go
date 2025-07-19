@@ -25,7 +25,7 @@ type Client struct {
 }
 
 // Get performs a GET request.
-func (c Client) Get(path string) (string, error) {
+func (c *Client) Get(path string) (string, error) {
 	if c.Verbose {
 		fmt.Println("GET", path)
 	}
@@ -60,7 +60,7 @@ func (c Client) Get(path string) (string, error) {
 }
 
 // Put performs a PUT request.
-func (c Client) Put(path string, body []byte) (string, error) {
+func (c *Client) Put(path string, body []byte) (string, error) {
 	if c.Verbose {
 		fmt.Println("PUT", path)
 		fmt.Println("===>", string(body))
@@ -102,7 +102,7 @@ func (c Client) Put(path string, body []byte) (string, error) {
 }
 
 // Endpoint returns the full URL for an API endpoint.
-func (c Client) Endpoint(path string) string {
+func (c *Client) Endpoint(path string) string {
 	return fmt.Sprintf("http://%s/api/v1/%s/%s", c.Host, c.Token, path)
 }
 
@@ -162,7 +162,7 @@ type PanelInfo struct {
 }
 
 // GetPanelInfo returns the Nanoleaf panel info.
-func (c Client) GetPanelInfo() (*PanelInfo, error) {
+func (c *Client) GetPanelInfo() (*PanelInfo, error) {
 	body, err := c.Get("")
 	if err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func (c Client) GetPanelInfo() (*PanelInfo, error) {
 }
 
 // ListEffects returns an array of effect names.
-func (c Client) ListEffects() ([]string, error) {
+func (c *Client) ListEffects() ([]string, error) {
 	body, err := c.Get("effects/effectsList")
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (c Client) ListEffects() ([]string, error) {
 }
 
 // Off turns off Nanoleaf.
-func (c Client) Off() error {
+func (c *Client) Off() error {
 	state := State{
 		On: &OnProperty{false},
 	}
@@ -199,7 +199,7 @@ func (c Client) Off() error {
 }
 
 // On turns on Nanoleaf.
-func (c Client) On() error {
+func (c *Client) On() error {
 	state := State{
 		On: &OnProperty{true},
 	}
@@ -212,7 +212,7 @@ func (c Client) On() error {
 }
 
 // SelectEffect activates the specified effect.
-func (c Client) SelectEffect(name string) error {
+func (c *Client) SelectEffect(name string) error {
 	req := effectsSelectRequest{
 		Select: name,
 	}
@@ -226,7 +226,7 @@ func (c Client) SelectEffect(name string) error {
 }
 
 // SetBrightness sets the Nanoleaf's brightness.
-func (c Client) SetBrightness(brightness int) error {
+func (c *Client) SetBrightness(brightness int) error {
 	state := State{
 		Brightness: &BrightnessProperty{Value: brightness},
 	}
@@ -241,7 +241,7 @@ func (c Client) SetBrightness(brightness int) error {
 }
 
 // SetColorTemperature sets the Nanoleaf's color temperature.
-func (c Client) SetColorTemperature(temperature int) error {
+func (c *Client) SetColorTemperature(temperature int) error {
 	state := State{
 		ColorTemperature: &ColorTemperatureProperty{Value: temperature},
 	}
@@ -256,7 +256,7 @@ func (c Client) SetColorTemperature(temperature int) error {
 }
 
 // SetHSL sets the Nanoleaf's hue, saturation, and lightness (brightness).
-func (c Client) SetHSL(hue int, sat int, lightness int) error {
+func (c *Client) SetHSL(hue int, sat int, lightness int) error {
 	state := State{
 		Brightness: &BrightnessProperty{Value: lightness},
 		Hue:        &HueProperty{Value: hue},
@@ -273,13 +273,13 @@ func (c Client) SetHSL(hue int, sat int, lightness int) error {
 }
 
 // SetRGB sets the Nanoleaf's color by converting RGB to HSL.
-func (c Client) SetRGB(red int, green int, blue int) error {
+func (c *Client) SetRGB(red int, green int, blue int) error {
 	h, s, l := rgbToHSL(red, green, blue)
 	return c.SetHSL(h, s, l)
 }
 
 // startExternalControl sets Nanoleaf to accept UDP input.
-func (c Client) startExternalControl() error {
+func (c *Client) startExternalControl() error {
 	_, err := c.Put("effects", []byte(`{"write":{"command":"display","animType":"extControl","extControlVersion":"v2"}}`))
 	return err
 }
@@ -295,7 +295,7 @@ type SetPanelColor struct {
 }
 
 // SetCustomColors sets individual Nanoleaf pane colors.
-func (c Client) SetCustomColors(frames []SetPanelColor) error {
+func (c *Client) SetCustomColors(frames []SetPanelColor) error {
 	err := c.startExternalControl()
 	if err != nil {
 		return err

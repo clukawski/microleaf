@@ -3,34 +3,78 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strconv"
 
-	"gopkg.in/ini.v1"
+	"github.com/spf13/viper"
 )
 
-const defaultConfigFile = ".picoleafrc"
+const defaultConfigFile = ".microleafrc"
 
 var configFilePath string
+var panelName string
 var verbose = flag.Bool("v", false, "Verbose")
+var config *MicroleafConfig
 
-func init() {
+// HostConfig defines the structure for individual host configurations.
+type HostConfig struct {
+	PanelName   string `mapstructure:"panel_name,required"`
+	Host        string `mapstructure:"host,required"`
+	AccessToken string `mapstructure:"access_token,required"`
+}
+
+// MicroleafConfig defines the overall structure of the configuration file.
+type MicroleafConfig struct {
+	HostConfigs []HostConfig `mapstructure:"host_configs"`
+}
+
+func initConfig() {
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println("error: failed to fetch current user:", err)
+		log.Fatalf("error: failed to look up current user: %v\n", err)
 		os.Exit(1)
 	}
-	dir := usr.HomeDir
-	defaultConfigFilePath := filepath.Join(dir, defaultConfigFile)
-
+	defaultConfigFilePath := usr.HomeDir
 	flag.StringVar(&configFilePath, "f", defaultConfigFilePath, "Config file path")
+	flag.StringVar(&panelName, "n", "", "Panel name")
+	flag.Parse()
+
+	// Ensure the user has provided a panel name to search
+	// the config for.
+	if panelName == "" {
+		usage()
+	}
+
+	// Initialize Viper
+	v := viper.New()
+
+	// Set the config file name without extension
+	v.SetConfigName(defaultConfigFile)
+	// Set the config file type
+	v.SetConfigType("toml")
+
+	// Set the path where Viper should look for the config file
+	v.AddConfigPath(configFilePath)
+	v.AddConfigPath(defaultConfigFilePath)
+
+	// Read the config file
+	if err := v.ReadInConfig(); err != nil {
+		log.Fatalf("error: failed to read in config file: %v\n", err)
+	}
+
+	// Unmarshal the config into the MicroleafConfig struct
+	var c MicroleafConfig
+	if err := v.Unmarshal(&c); err != nil {
+		log.Fatalf("error: failed to parse config file: %v\n", err)
+	}
+	config = &c
 }
 
 func usage() {
-	fmt.Println("usage: picoleaf [-f <path>] [-v] <command>")
+	fmt.Println("usage: microleaf -n <panel_name> [-f <path>] [-v] <command>")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println()
@@ -51,22 +95,32 @@ func usage() {
 }
 
 func main() {
-	flag.Parse()
-
-	cfg, err := ini.Load(configFilePath)
-	if err != nil {
-		fmt.Println("error: failed to read file:", err)
-		os.Exit(1)
-	}
-
-	client := Client{
-		Host:    cfg.Section("").Key("host").String(),
-		Token:   cfg.Section("").Key("access_token").String(),
-		Verbose: *verbose,
-	}
+	initConfig()
 
 	if *verbose {
-		fmt.Printf("Host: %s\n\n", client.Host)
+		fmt.Printf("configs: %+v\n\n", config.HostConfigs)
+	}
+
+	var client *Client
+	for n, hostConfig := range config.HostConfigs {
+		if hostConfig.PanelName == panelName {
+			client = &Client{
+				Host:    hostConfig.Host,
+				Token:   hostConfig.AccessToken,
+				Verbose: *verbose,
+			}
+			if *verbose {
+				fmt.Printf(
+					"current config [%d]: %s\n\n",
+					n, hostConfig,
+				)
+			}
+			break
+		}
+	}
+	if client == nil {
+		log.Println("error: no config matching specified panel name")
+		usage()
 	}
 
 	if flag.NArg() > 0 {
@@ -81,13 +135,13 @@ func main() {
 		case "hsl":
 			doHSLCommand(client, flag.Args()[1:])
 		case "off":
-			err = client.Off()
+			err := client.Off()
 			if err != nil {
 				fmt.Println("error: failed to turn off Nanoleaf:", err)
 				os.Exit(1)
 			}
 		case "on":
-			err = client.On()
+			err := client.On()
 			if err != nil {
 				fmt.Println("error: failed to turn on Nanoleaf:", err)
 				os.Exit(1)
@@ -106,9 +160,9 @@ func main() {
 	}
 }
 
-func doBrightnessCommand(client Client, args []string) {
+func doBrightnessCommand(client *Client, args []string) {
 	if len(args) < 1 {
-		fmt.Println("usage: picoleaf brightness <brightness>")
+		fmt.Println("usage: microleaf brightness <brightness>")
 		os.Exit(1)
 	}
 
@@ -125,9 +179,9 @@ func doBrightnessCommand(client Client, args []string) {
 	}
 }
 
-func doColorTemperatureCommand(client Client, args []string) {
+func doColorTemperatureCommand(client *Client, args []string) {
 	if len(args) < 1 {
-		fmt.Println("usage: picoleaf temp <temperature>")
+		fmt.Println("usage: microleaf temp <temperature>")
 		os.Exit(1)
 	}
 
@@ -144,11 +198,11 @@ func doColorTemperatureCommand(client Client, args []string) {
 	}
 }
 
-func doEffectCommand(client Client, args []string) {
+func doEffectCommand(client *Client, args []string) {
 	usage := func() {
-		fmt.Println("usage: picoleaf effect list")
-		fmt.Println("       picoleaf effect select <name>")
-		fmt.Println("       picoleaf effect custom [<panel> <red> <green> <blue> <transition time>] ...")
+		fmt.Println("usage: microleaf effect list")
+		fmt.Println("       microleaf effect select <name>")
+		fmt.Println("       microleaf effect custom [<panel> <red> <green> <blue> <transition time>] ...")
 		os.Exit(1)
 	}
 
@@ -162,7 +216,7 @@ func doEffectCommand(client Client, args []string) {
 		customArgs := args[1:]
 		numFrameArgs := 5
 		if len(customArgs)%numFrameArgs != 0 {
-			fmt.Println("usage: picoleaf effect custom [<panel> <red> <green> <blue> <transition time>] ...")
+			fmt.Println("usage: microleaf effect custom [<panel> <red> <green> <blue> <transition time>] ...")
 		}
 
 		numFrames := len(customArgs) / numFrameArgs
@@ -222,7 +276,7 @@ func doEffectCommand(client Client, args []string) {
 		}
 	case "select":
 		if len(args) != 2 {
-			fmt.Println("usage: picoleaf effect select <name>")
+			fmt.Println("usage: microleaf effect select <name>")
 			os.Exit(1)
 		}
 
@@ -237,9 +291,9 @@ func doEffectCommand(client Client, args []string) {
 	}
 }
 
-func doGetCommand(client Client, args []string) {
+func doGetCommand(client *Client, args []string) {
 	if len(args) < 1 {
-		fmt.Println("usage: picoleaf get <path>")
+		fmt.Println("usage: microleaf get <path>")
 		os.Exit(1)
 	}
 
@@ -252,12 +306,12 @@ func doGetCommand(client Client, args []string) {
 	fmt.Println(res)
 }
 
-func doPanelCommand(client Client, args []string) {
+func doPanelCommand(client *Client, args []string) {
 	usage := func() {
-		fmt.Println("usage: picoleaf panel info")
-		fmt.Println("       picoleaf panel model")
-		fmt.Println("       picoleaf panel name")
-		fmt.Println("       picoleaf panel version")
+		fmt.Println("usage: microleaf panel info")
+		fmt.Println("       microleaf panel model")
+		fmt.Println("       microleaf panel name")
+		fmt.Println("       microleaf panel version")
 		os.Exit(1)
 	}
 
@@ -358,9 +412,9 @@ func doPanelCommand(client Client, args []string) {
 	}
 }
 
-func doHSLCommand(client Client, args []string) {
+func doHSLCommand(client *Client, args []string) {
 	if len(args) != 3 {
-		fmt.Println("usage: picoleaf hsl <hue> <saturation> <lightness>")
+		fmt.Println("usage: microleaf hsl <hue> <saturation> <lightness>")
 		os.Exit(1)
 	}
 
@@ -389,9 +443,9 @@ func doHSLCommand(client Client, args []string) {
 	}
 }
 
-func doRGBCommand(client Client, args []string) {
+func doRGBCommand(client *Client, args []string) {
 	if len(args) != 3 {
-		fmt.Println("usage: picoleaf rgb <red> <green> <blue>")
+		fmt.Println("usage: microleaf rgb <red> <green> <blue>")
 		os.Exit(1)
 	}
 
